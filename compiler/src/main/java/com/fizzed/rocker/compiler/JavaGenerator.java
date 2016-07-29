@@ -40,9 +40,13 @@ import com.fizzed.rocker.model.TemplateUnit;
 import com.fizzed.rocker.model.ValueClosureBegin;
 import com.fizzed.rocker.model.ValueClosureEnd;
 import com.fizzed.rocker.model.ValueExpression;
+import com.fizzed.rocker.model.WithBlockBegin;
+import com.fizzed.rocker.model.WithBlockEnd;
+import com.fizzed.rocker.model.WithStatement;
 import com.fizzed.rocker.runtime.BreakException;
 import com.fizzed.rocker.runtime.ContinueException;
 import com.fizzed.rocker.runtime.Java8Iterator;
+import com.fizzed.rocker.runtime.Java8With;
 import com.fizzed.rocker.runtime.PlainTextUnloadedClassLoader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -413,6 +417,8 @@ public class JavaGenerator {
                         .append(loaderClassName)
                         .append(".tryLoad(")
                         .append(model.getName())
+                        .append(".class.getClassLoader(), ")
+                        .append(model.getName())
                         .append(".class.getName()")
                         .append(" + \"$PlainText\", \"")
                         .append(model.getOptions().getTargetCharset())
@@ -656,6 +662,44 @@ public class JavaGenerator {
                         .append(blockEnd.pop())
                         .append(" // if end ").append(sourceRef(unit)).append(CRLF);
                 
+            }
+            else if (unit instanceof WithBlockBegin) {
+                WithBlockBegin block = (WithBlockBegin)unit;
+                WithStatement stmt = block.getStatement();
+                
+                // Java 1.8+ (use lambdas)
+                if (model.getOptions().isGreaterThanOrEqualToJavaVersion(JavaVersion.v1_8)) {
+                
+                    tab(w, depth+indent)
+                        .append(Java8With.class.getName())
+                        .append(".with(")
+                        .append(stmt.getValueExpression())
+                        .append(", (").append(stmt.getVariable().toString()).append(") -> {").append(CRLF);
+                
+                    depth++;
+                
+                    blockEnd.push("});");
+                
+                } else {
+                    
+                    tab(w, depth+indent)
+                        .append("{ // with begin").append(CRLF);
+
+                    depth++;
+
+                    blockEnd.push("}");
+
+                    tab(w, depth+indent)
+                        .append("final ").append(stmt.getVariable().toString()).append(" = ")
+                            .append(stmt.getValueExpression()).append(";").append(CRLF);
+                }
+            }
+            else if (unit instanceof WithBlockEnd) {                
+                depth--;
+                
+                tab(w, depth+indent)
+                        .append(blockEnd.pop())
+                        .append(" // with end ").append(sourceRef(unit)).append(CRLF);
             }
             else if (unit instanceof ForBlockBegin) {
                 ForBlockBegin block = (ForBlockBegin)unit;

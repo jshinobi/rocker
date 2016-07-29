@@ -1,6 +1,24 @@
 Rocker Templates by Fizzed
 ==========================
 
+#### 0.12.3 - 2016-07-16
+
+ - Ignore synthetic fields in plain text classloader (alkemist)
+
+#### 0.12.2 - 2016-07-13
+
+ - Fixed backwards compat with templates compiled w/ older versions running with this
+   version of Rocker.
+
+#### 0.12.1 - 2016-07-13
+
+ - Load template field inner classes via the classloader that loaded the template (alkemist)
+
+#### 0.12.0 - 2016-06-01
+
+ - New @with feature to set a scoped variable to a value.  When in Java 8+, the
+   variable type is optional since it will be inferred by the compiler.
+
 #### 0.11.1 - 2016-02-04
 
  - Removed generic type parameter for DefaultRockerModel to fix an issue with
